@@ -1,16 +1,16 @@
 services:
-  keycloak_service:
-    build:
-      context: .
-      dockerfile: ./keycloak_service/Dockerfile
-    container_name: keycloak_service
-    networks:
-      - app-network
-    env_file:
-      - .env
-    depends_on:
-      keycloak:
-        condition: service_healthy
+  # _service:
+  #   build:
+  #     context: .
+  #     dockerfile: ./keycloak_service/Dockerfile
+  #   container_name: keycloak_service
+  #   networks:
+  #     - app-network
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     keycloak:
+  #       condition: service_healthy
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
@@ -31,6 +31,15 @@ services:
       timeout: 5s
       retries: 30
 
+  
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP-порт 
+      - "8025:8025"   # Веб-интерфейс
+    networks:
+      - app-network
   db:
     image: postgres:17-alpine
     container_name: db
