@@ -47,6 +47,58 @@
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 30,
+  "roles": {
+    "realm": [
+      {
+        "id": "2f510537-c1ed-4174-aec3-b8c1042db999",
+        "name": "default-roles-test",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "offline_access",
+            "uma_authorization"
+          ],
+          "client": {
+            "account": [
+              "view-profile",
+              "manage-account"
+            ]
+          }
+        },
+        "clientRole": false,
+        "containerId": "1fda96e3-6b11-41a2-b0a8-253888eb36b2",
+        "attributes": {}
+      },
+      {
+        "id": "e1783e20-63f9-4872-9312-df890e355ea1",
+        "name": "uma_authorization",
+        "description": "${role_uma_authorization}",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "1fda96e3-6b11-41a2-b0a8-253888eb36b2",
+        "attributes": {}
+      },
+      {
+        "id": "655133da-abae-4d33-b179-0ba333cd5fdf",
+        "name": "offline_access",
+        "description": "${role_offline-access}",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "1fda96e3-6b11-41a2-b0a8-253888eb36b2",
+        "attributes": {}
+      },
+      {
+        "id": "af865c1b-1fe2-4922-8e4e-e7b95927da1f",
+        "name": "admin",
+        "description": "",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "1fda96e3-6b11-41a2-b0a8-253888eb36b2",
+        "attributes": {}
+      }
+    ]
+  },
   "groups": [],
   "defaultRole": {
     "id": "2f510537-c1ed-4174-aec3-b8c1042db999",
