@@ -1,0 +1,3 @@
+fastapi==0.141.1
+fastapi_keycloak_middleware==1.6.0
+uvicorn

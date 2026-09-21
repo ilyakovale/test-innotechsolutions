@@ -1,23 +1,31 @@
 services:
-  # _service:
-  #   build:
-  #     context: .
-  #     dockerfile: ./keycloak_service/Dockerfile
-  #   container_name: keycloak_service
-  #   networks:
-  #     - app-network
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     keycloak:
-  #       condition: service_healthy
+  fastapi:
+    build: ./main_service
+    container_name: fastapi
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "localhost:host-gateway"
+    depends_on:
+      - keycloak
+    networks:
+      - app-network
+
+    pre_start:
+      - command: ["python", "setup_keycloak.py"]
+    
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     container_name: keycloak
-    command: start-dev --http-relative-path=/auth
+    command: start-dev --verbose  --import-realm
     env_file:
       - .env
+    volumes:
+      - ./keycloak-config:/opt/keycloak/data/import
+
     ports:
       - "8080:8080"          
     networks:
@@ -38,10 +46,11 @@ services:
       - .env
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
