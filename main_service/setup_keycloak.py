@@ -5,15 +5,15 @@ import httpx
 from keycloak import KeycloakAdmin
 from keycloak.exceptions import KeycloakGetError
 
-# --- Конфигурация из env ---
-KEYCLOAK_URL = os.getenv("KEYCLOAK_URL", "http://keycloak:8080")
-KEYCLOAK_PUBLIC_URL = os.getenv("KEYCLOAK_PUBLIC_URL", "http://localhost:8080")
-REALM = os.getenv("KEYCLOAK_REALM", "test")
+
+KC_URL = os.getenv("KC_URL", "http://keycloak:8080")
+KC_HOSTNAME = os.getenv("KC_HOSTNAME", "http://localhost:8080")
+REALM = os.getenv("KC_REALM", "test")
 ADMIN_USER = os.getenv("KC_BOOTSTRAP_ADMIN_USERNAME")
 ADMIN_PASS = os.getenv("KC_BOOTSTRAP_ADMIN_PASSWORD")
 
-CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID", "fastapi")
-FASTAPI_URL = os.getenv("FASTAPI_PUBLIC_URL", "http://localhost:8000")
+CLIENT_ID = os.getenv("KC_CLIENT_ID", "fastapi")
+FASTAPI_URL = os.getenv("FASTAPI_HOSTNAME", "http://localhost:8000")
 
 SMTP_CONFIG = {
     "host": os.getenv("SMTP_HOST"),
@@ -29,7 +29,7 @@ SMTP_CONFIG = {
 def wait_for_keycloak():
     for _ in range(60):
         try:
-            r = httpx.get(f"{KEYCLOAK_URL}/realms/master", timeout=2)
+            r = httpx.get(f"{KC_URL}/realms/master", timeout=2)
             if r.status_code == 200:
                 return True
         except Exception:
@@ -40,11 +40,11 @@ def wait_for_keycloak():
 
 def get_admin():
     return KeycloakAdmin(
-        server_url=KEYCLOAK_URL,
+        server_url=KC_URL,
         username=ADMIN_USER,
         password=ADMIN_PASS,
-        realm_name=REALM,          # работаем в целевом Realm
-        user_realm_name="master",  # логинимся через master
+        realm_name=REALM,          
+        user_realm_name="master",  
         verify=True,
     )
 
@@ -62,7 +62,7 @@ def setup_realm(admin):
         "smtpServer": SMTP_CONFIG,
     }
     admin.update_realm(realm_name=REALM, payload=payload)
-    print(f"✓ Realm '{REALM}' обновлён (verifyEmail, registration, SMTP)")
+    print(f"Realm '{REALM}' обновлён (verifyEmail, registration, SMTP)")
 
 
 def setup_client(admin):
@@ -87,7 +87,7 @@ def setup_client(admin):
         },
     }
 
-    # Проверяем, существует ли клиент
+
     existing = admin.get_clients()
     client_uuid = None
     for c in existing:
@@ -97,28 +97,27 @@ def setup_client(admin):
 
     if client_uuid:
         admin.update_client(client_id=client_uuid, payload=client_payload)
-        print(f"✓ Клиент '{CLIENT_ID}' обновлён")
+        print(f"Клиент '{CLIENT_ID}' обновлён")
     else:
         admin.create_client(payload=client_payload, skip_exists=True)
-        print(f"✓ Клиент '{CLIENT_ID}' создан")
+        print(f"Клиент '{CLIENT_ID}' создан")
 
 
 def main():
     if not wait_for_keycloak():
-        print("✗ Keycloak не доступен", file=sys.stderr)
+        print("Keycloak не доступен", file=sys.stderr)
         sys.exit(1)
 
     try:
         admin = get_admin()
         setup_realm(admin)
         setup_client(admin)
-        print("✓ Настройка завершена успешно")
         sys.exit(0)
     except KeycloakGetError as e:
-        print(f"✗ Ошибка Keycloak: {e}", file=sys.stderr)
+        print(f"Ошибка Keycloak: {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"✗ Ошибка: {e}", file=sys.stderr)
+        print(f"Ошибка: {e}", file=sys.stderr)
         sys.exit(1)
 
 
