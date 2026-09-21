@@ -20,9 +20,8 @@ docker compose up
 
 
 ## Доступ
-Сервис	URL	Логин
-Swagger UI	http://localhost:8000/docs	—
-Keycloak Admin	http://localhost:8080/admin/	admin / admin
++ Swagger UI	http://localhost:8000/docs
++ Keycloak Admin	http://localhost:8080/
 
 ## Что сделано:
 
