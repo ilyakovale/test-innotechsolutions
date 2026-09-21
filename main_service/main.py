@@ -7,6 +7,13 @@ from fastapi_keycloak_middleware import (
     get_user,
     FastApiUser,
 )
+from sqlalchemy.orm import Session
+
+import crud
+import models
+from database import Base, engine, get_db
+from schemas import MessageIn, MessageOut
+
 
 KC_URL = os.getenv("KC_URL", "http://keycloak:8080")
 ITERNAL_KC_URL = os.getenv("ITERNAL_KC_URL", "http://localhost:8080")
@@ -17,11 +24,7 @@ keycloak_config = KeycloakConfiguration(
     url=KC_URL,
     realm=REALM,
     client_id=CLIENT_ID,
-    decode_options={
-        "verify_signature": True,
-        "verify_aud": False,   
-        "verify_exp": True,
-    },
+    verify_audience=False,
 )
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
@@ -29,6 +32,10 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
     tokenUrl=f"{ITERNAL_KC_URL}/realms/{REALM}/protocol/openid-connect/token",
     scopes={"openid": "openid", "profile": "profile", "email": "email"},
 )
+
+
+Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI(
     title="Test API",
@@ -44,39 +51,51 @@ setup_keycloak_middleware(
     keycloak_configuration=keycloak_config,
     add_swagger_auth=False,
     exclude_patterns=[
-        r"^/docs(/.*)?$",              
-        r"^/openapi\.json$",           
-        r"^/redoc(/.*)?$",             
-        r"^/$",                        
-        r"^/public$",                  
+        r"^/docs(/.*)?$",
+        r"^/openapi\.json$",
+        r"^/redoc(/.*)?$",
+        r"^/$",
+        r"^/public$",
     ],
 )
 
 
-@app.get("/public")
-async def public():
+@app.get("/")
+async def root():
     return {"status": "ok"}
 
 
-@app.get("/authorize")
-async def authorize(
+@app.post("/public", response_model=MessageOut)
+async def public_post(payload: MessageIn, db: Session = Depends(get_db)):
+    """Публичная ручка: сообщение в БД без пользователя."""
+    return crud.create_message(db, text=payload.text)
+
+
+@app.post("/authorize", response_model=MessageOut)
+async def authorize_post(
+    payload: MessageIn,
+    db: Session = Depends(get_db),
     user: FastApiUser = Depends(get_user),
     _token: str = Depends(oauth2_scheme),
 ):
-    if user is None:
+    """Защищённая ручка: сообщение с именем пользователя."""
+    if user is None or not user.is_authenticated:
         raise HTTPException(401, "Not authenticated")
-    return {
-        "type": str(type(user)),
-        "attributes": dir(user),
-        "dict": getattr(user, "__dict__", None),
-    }
+    return crud.create_message(
+        db,
+        text=payload.text,
+        username=user.display_name,
+        is_authenticated=True,
+    )
 
 
-@app.get("/admin")
-async def admin(
+@app.get("/admin", response_model=list[MessageOut])
+async def admin_get(
+    db: Session = Depends(get_db),
     user: FastApiUser = Depends(get_user),
     _token: str = Depends(oauth2_scheme),
 ):
-    if user is None:
+    """Админская ручка: возвращает все сообщения"""
+    if user is None or not user.is_authenticated:
         raise HTTPException(401, "Not authenticated")
-    return {"status": "ok", "username": user.username}
+    return crud.get_all_messages(db)
